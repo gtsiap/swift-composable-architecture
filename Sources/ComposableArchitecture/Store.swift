@@ -277,16 +277,20 @@ public final class Store<State, Action> {
   /// - Returns: A new store with its domain (state and action) transformed.
   public func scope<LocalState, LocalAction>(
     state toLocalState: @escaping (State) -> LocalState,
-    action fromLocalAction: @escaping (LocalAction) -> Action
+    action fromLocalAction: @escaping (LocalAction) -> Action,
+    file: StaticString = #file,
+    line: UInt = #line
   ) -> Store<LocalState, LocalAction> {
     var isSending = false
     let localStore = Store<LocalState, LocalAction>(
       initialState: toLocalState(self.state.value),
       reducer: .init { localState, localAction, _ in
+        os_signpost(.begin, log: osLog, name: "TCAStore.scope.reducer", "%s:%s", "\(file)", "\(line)")
         isSending = true
         defer { isSending = false }
         self.send(fromLocalAction(localAction))
         localState = toLocalState(self.state.value)
+        os_signpost(.end, log: osLog, name: "TCAStore.scope.reducer")
         return .none
       },
       environment: ()
@@ -295,7 +299,9 @@ public final class Store<State, Action> {
       .dropFirst()
       .sink { [weak localStore] newValue in
         guard !isSending else { return }
+        os_signpost(.begin, log: osLog, name: "TCAStore.scope.subscription", "%s:%s", "\(file)", "\(line)")
         localStore?.state.value = toLocalState(newValue)
+        os_signpost(.end, log: osLog, name: "TCAStore.scope.subscription")
       }
     return localStore
   }
@@ -409,3 +415,6 @@ public final class Store<State, Action> {
     return self.scope(state: { $0 }, action: absurd)
   }
 }
+
+import OSLog
+let osLog = OSLog(subsystem: "TCAStore", category: .pointsOfInterest)
