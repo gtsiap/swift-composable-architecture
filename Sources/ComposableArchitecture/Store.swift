@@ -343,8 +343,12 @@ public final class Store<State, Action> {
       .dropFirst()
       .sink { [weak localStore] newValue in
         guard !isSending else { return }
+        os_signpost(.begin, log: osLog, name: "TCAStore.scope.subscription.toLocalState", "%s:%s", "\(file)", "\(line)")
+        let localState = toLocalState(newValue)
+        os_signpost(.end, log: osLog, name: "TCAStore.scope.subscription.toLocalState")
+
         os_signpost(.begin, log: osLog, name: "TCAStore.scope.subscription", "%s:%s", "\(file)", "\(line)")
-        localStore?.state.value = toLocalState(newValue)
+        localStore?.state.value = localState
         os_signpost(.end, log: osLog, name: "TCAStore.scope.subscription")
       }
     return localStore
