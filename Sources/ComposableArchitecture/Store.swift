@@ -355,9 +355,11 @@ public final class Store<State, Action> {
   /// - Parameter toLocalState: A function that transforms `State` into `LocalState`.
   /// - Returns: A new store with its domain (state and action) transformed.
   public func scope<LocalState>(
-    state toLocalState: @escaping (State) -> LocalState
+    state toLocalState: @escaping (State) -> LocalState,
+    file: StaticString = #file,
+    line: UInt = #line
   ) -> Store<LocalState, Action> {
-    self.scope(state: toLocalState, action: { $0 })
+    self.scope(state: toLocalState, action: { $0 }, file: file, line: line)
   }
 
   func send(_ action: Action, originatingFrom originatingAction: Action? = nil) {
